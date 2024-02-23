@@ -1,55 +1,54 @@
-import { useState, useEffect } from 'react';
-import './App.css';
+import { useState, useEffect } from "react";
+import "./App.css";
 
 function App() {
-  const [catFact, setCatFact] = useState(''); // Use more descriptive name
-  const [catImageUrl, setCatImageUrl] = useState('');
+  const [poke, setPokes] = useState([]); // Use more descriptive name
 
   useEffect(() => {
-    const fetchCatFact = async () => {
-      try {
-        const response = await fetch('https://catfact.ninja/fact');
-        const data = await response.json();
-        setCatFact(data.fact);
-      } catch (error) {
-        console.error(error);
-      }
+    const getPoke = async () => {
+      const response = await fetch(
+        "https://pokeapi.co/api/v2/pokemon?limit=25&offset=0"
+      );
+      const listaPokes = await response.json();
+      const { results } = listaPokes;
+
+      const newPoke = results.map(async (pokemon) => {
+        const response = await fetch(pokemon.url);
+        const pokemons = await response.json();
+
+        return {
+          id: pokemons.id,
+          name: pokemons.name,
+          img: pokemons.sprites.other.dream_world.front_default,
+        };
+      });
+      setPokes(await Promise.all(newPoke));
     };
 
-    fetchCatFact();
+    getPoke();
   }, []);
-
-  useEffect(() => {
-    if (catFact) {
-      const generateCatImage = async () => {
-        try {
-          const firstWord = catFact.split(' ', 3).join(' ');
-          const response = await fetch(`https://cataas.com/cat/says/${firstWord}`);
-
-          if (response.ok) {
-            const data = await response.blob(); // Handle data as blob
-            const imageUrl = URL.createObjectURL(data); // Generate URL from blob
-            setCatImageUrl(imageUrl);
-          } else {
-            console.error('Error fetching cat image:', response.statusText);
-          }
-        } catch (error) {
-          console.error(error);
-        }
-      };
-
-      generateCatImage();
-    }
-  }, [catFact]);
 
   return (
     <>
-      <h1>Random Cat Fact</h1>
-      {catFact && <p>{catFact}</p>}
-      {catImageUrl && (
-        <img src={catImageUrl} alt="random cat" width={300} height={300} />
-      )}
-      {catImageUrl && <p>Image generated based on the first word of the fact.</p>}
+      <h1 className="titulo">Pokedex</h1>
+      <section className="pokemon-container">
+        {poke.map((pokemon) => {
+          return (
+            <div className="pokemon-card">
+              <img
+                src={pokemon.img}
+                alt={pokemon.name}
+                className="pokemon-imagen"
+              />
+
+              <p className="pokemon-titulo">
+                <span>#{pokemon.id}</span>
+                <span>{pokemon.name}</span>
+              </p>
+            </div>
+          );
+        })}
+      </section>
     </>
   );
 }
